@@ -85,54 +85,6 @@ with st.sidebar:
             },
         }
     )
-    _, col_header, _ = st.columns([0.05, 0.9, 0.05])
-    
-    with col_header:
-        c1, c2, c3 = st.columns([0.9, 1, 2.1])
-        
-        with c1:
-            try:
-                st.image("logo_lamongan.png", use_container_width=True)
-            except:
-                st.write("🏛️")
-        
-        with c2:
-            try:
-                st.image("logo.png", use_container_width=True)
-            except:
-                st.write("🌐")
-        
-        with c3:
-            st.markdown("""
-                <div style="line-height: 1.1; color: #1E3A8A; font-weight: 800; font-size: 13px; margin-top: 5px;">
-                    DISKOMINFO<br>LAMONGAN
-                </div>
-            """, unsafe_allow_html=True)
-    
-    selected = option_menu(
-        menu_title=None, 
-        options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Contact Info"],
-        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "key", "gear"],
-        menu_icon="cast",
-        default_index=0,
-        styles={
-            "container": {"padding": "0!important", "background-color": "#FFFFFF"},
-            "icon": {"color": "#1E3A8A", "font-size": "16px"}, 
-            "nav-link": {
-                "font-size": "14px", 
-                "text-align": "left", 
-                "margin":"0px", 
-                "color": "#334155", 
-                "--hover-color": "#EFF6FF"
-            },
-            "nav-link-selected": {
-                "background-color": "#EFF6FF", 
-                "color": "#2563EB", 
-                "font-weight": "600", 
-                "border-right": "3px solid #2563EB"
-            },
-        }
-    )
    
 # --- HALAMAN ANALISIS ---
 # --- 1. OVERVIEW ---

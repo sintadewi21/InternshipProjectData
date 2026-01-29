@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -13,7 +14,10 @@ st.set_page_config(
 
 # --- LOAD CUSTOM CSS ---
 def local_css(file_name):
-    with open(file_name, encoding='utf-8') as f:
+    current_dir = os.path.dirname(__file__)
+    full_path = os.path.join(current_dir, file_name)
+    
+    with open(full_path, encoding='utf-8') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 local_css("assets/custom_style.css")

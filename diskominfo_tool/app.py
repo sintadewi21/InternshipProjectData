@@ -59,8 +59,6 @@ with st.sidebar:
                 </div>
             """, unsafe_allow_html=True)
     
-    st.markdown("---")
-
     selected = option_menu(
         menu_title=None, 
         options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Contact Info"],

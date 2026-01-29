@@ -1,4 +1,5 @@
 import os
+import select
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -63,34 +64,15 @@ with st.sidebar:
                     DISKOMINFO<br>LAMONGAN
                 </div>
             """, unsafe_allow_html=True)
-    _, col_header, _ = st.columns([0.05, 0.9, 0.05])
     
-    with col_header:
-        c1, c2, c3 = st.columns([0.9, 1, 2.1])
-        
-        with c1:
-            try:
-                st.image("logo_lamongan.png", use_container_width=True)
-            except:
-                st.write("🏛️")
-        
-        with c2:
-            try:
-                st.image("logo.png", use_container_width=True)
-            except:
-                st.write("🌐")
-        
-        with c3:
-            st.markdown("""
-                <div style="line-height: 1.1; color: #1E3A8A; font-weight: 800; font-size: 13px; margin-top: 5px;">
-                    DISKOMINFO<br>LAMONGAN
-                </div>
-            """, unsafe_allow_html=True)
-    
+    st.markdown("---") # Garis pembatas biar rapi
+
+    # --- MENU NAVIGASI ---
     selected = option_menu(
         menu_title=None, 
         options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Contact Info"],
-        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "key", "gear"],
+        # Aku sesuaikan jumlah icon (7) agar pas dengan jumlah options (7)
+        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "envelope"], 
         menu_icon="cast",
         default_index=0,
         styles={
@@ -111,10 +93,10 @@ with st.sidebar:
             },
         }
     )
-   
+
 # --- HALAMAN ANALISIS ---
 # --- 1. OVERVIEW ---
-if selected == "Overview":
+if select == "Overview":
     # Header
     col_h1, col_h2 = st.columns([2, 1])
     with col_h1:

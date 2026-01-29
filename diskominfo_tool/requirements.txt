@@ -5,3 +5,4 @@ plotly
 pyngrok
 scikit-learn
 scipy
+streamlit-option-menu

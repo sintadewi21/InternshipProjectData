@@ -5,29 +5,64 @@ import plotly.express as px
 from streamlit_option_menu import option_menu
 from utils import loader, analysis, visualization
 
-# --- KONFIGURASI HALAMAN ---
+# --- 1. SETUP PATH ABSOLUT (Kunci Utama buat Cloud) ---
+# Mencari lokasi folder tempat app.py berada
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# --- 2. KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="Diskominfo Data Tool",
     page_icon="📊",
     layout="wide"
 )
 
-# --- LOAD CUSTOM CSS ---
+# --- 3. LOAD CUSTOM CSS ---
 def local_css(file_name):
-    current_dir = os.path.dirname(__file__)
-    full_path = os.path.join(current_dir, file_name)
+    # Gabungkan BASE_DIR dengan nama file agar path-nya absolut
+    full_path = os.path.join(BASE_DIR, file_name)
     
-    with open(full_path, encoding='utf-8') as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    if os.path.exists(full_path):
+        with open(full_path, encoding='utf-8') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    else:
+        st.warning(f"File CSS tidak ditemukan di: {full_path}")
 
 local_css("assets/custom_style.css")
 
-# --- INISIALISASI SESSION STATE ---
+# --- 4. INISIALISASI SESSION STATE ---
 if 'df' not in st.session_state:
     st.session_state['df'] = None
 
-# --- SIDEBAR ---
+# --- 5. SIDEBAR ---
 with st.sidebar:
+    # --- HEADER LOGO ---
+    _, col_header, _ = st.columns([0.05, 0.9, 0.05])
+    
+    with col_header:
+        c1, c2, c3 = st.columns([0.9, 1, 2.1])
+        
+        # Path gambar absolut
+        logo_lamongan_path = os.path.join(BASE_DIR, "logo_lamongan.png")
+        logo_path = os.path.join(BASE_DIR, "logo.png")
+        
+        with c1:
+            if os.path.exists(logo_lamongan_path):
+                st.image(logo_lamongan_path, use_container_width=True)
+            else:
+                st.write("🏛️")
+        
+        with c2:
+            if os.path.exists(logo_path):
+                st.image(logo_path, use_container_width=True)
+            else:
+                st.write("🌐")
+        
+        with c3:
+            st.markdown("""
+                <div style="line-height: 1.1; color: #1E3A8A; font-weight: 800; font-size: 13px; margin-top: 5px;">
+                    DISKOMINFO<br>LAMONGAN
+                </div>
+            """, unsafe_allow_html=True)
     _, col_header, _ = st.columns([0.05, 0.9, 0.05])
     
     with col_header:

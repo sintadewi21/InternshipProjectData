@@ -1,61 +1,48 @@
 import os
-import select
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_option_menu import option_menu
 from utils import loader, analysis, visualization
 
-# --- 1. SETUP PATH ABSOLUT (Kunci Utama buat Cloud) ---
-# Mencari lokasi folder tempat app.py berada
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# --- 2. KONFIGURASI HALAMAN ---
+# --- KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="Diskominfo Data Tool",
     page_icon="📊",
     layout="wide"
 )
 
-# --- 3. LOAD CUSTOM CSS ---
+# --- LOAD CUSTOM CSS ---
 def local_css(file_name):
-    # Gabungkan BASE_DIR dengan nama file agar path-nya absolut
-    full_path = os.path.join(BASE_DIR, file_name)
+    current_dir = os.path.dirname(__file__)
+    full_path = os.path.join(current_dir, file_name)
     
-    if os.path.exists(full_path):
-        with open(full_path, encoding='utf-8') as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    else:
-        st.warning(f"File CSS tidak ditemukan di: {full_path}")
+    with open(full_path, encoding='utf-8') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 local_css("assets/custom_style.css")
 
-# --- 4. INISIALISASI SESSION STATE ---
+# --- INISIALISASI SESSION STATE ---
 if 'df' not in st.session_state:
     st.session_state['df'] = None
 
-# --- 5. SIDEBAR ---
+# --- SIDEBAR ---
 with st.sidebar:
-    # --- HEADER LOGO ---
     _, col_header, _ = st.columns([0.05, 0.9, 0.05])
     
     with col_header:
         c1, c2, c3 = st.columns([0.9, 1, 2.1])
         
-        # Path gambar absolut
-        logo_lamongan_path = os.path.join(BASE_DIR, "logo_lamongan.png")
-        logo_path = os.path.join(BASE_DIR, "logo.png")
-        
         with c1:
-            if os.path.exists(logo_lamongan_path):
-                st.image(logo_lamongan_path, use_container_width=True)
-            else:
+            try:
+                st.image("logo_lamongan.png", use_container_width=True)
+            except:
                 st.write("🏛️")
         
         with c2:
-            if os.path.exists(logo_path):
-                st.image(logo_path, use_container_width=True)
-            else:
+            try:
+                st.image("logo.png", use_container_width=True)
+            except:
                 st.write("🌐")
         
         with c3:
@@ -65,14 +52,10 @@ with st.sidebar:
                 </div>
             """, unsafe_allow_html=True)
     
-    st.markdown("---") # Garis pembatas biar rapi
-
-    # --- MENU NAVIGASI ---
     selected = option_menu(
         menu_title=None, 
         options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Contact Info"],
-        # Aku sesuaikan jumlah icon (7) agar pas dengan jumlah options (7)
-        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "envelope"], 
+        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "key", "gear"],
         menu_icon="cast",
         default_index=0,
         styles={
@@ -93,10 +76,10 @@ with st.sidebar:
             },
         }
     )
-
+   
 # --- HALAMAN ANALISIS ---
 # --- 1. OVERVIEW ---
-if select == "Overview":
+if selected == "Overview":
     # Header
     col_h1, col_h2 = st.columns([2, 1])
     with col_h1:

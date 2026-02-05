@@ -1,7 +1,10 @@
+/* Button full width (panjang) */
 .stButton > button, .stButton button:has(> span:contains('Calculate Regression')) {
     width: 100% !important;
     display: block !important;
+    /* ...existing style... */
 }
+/* Global Font */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@700;900&display=swap');
 
 html,
@@ -10,15 +13,18 @@ body,
     font-family: 'Inter', sans-serif;
 }
 
+/* Background */
 .stApp {
     background-color: #F8FAFC;
 }
 
+/* Sidebar */
 [data-testid="stSidebar"] {
     background-color: #FFFFFF;
     border-right: 1px solid #E5E7EB;
 }
 
+/* Layout */
 .block-container {
     padding-top: 3rem !important;
     padding-left: 2rem !important;
@@ -26,6 +32,7 @@ body,
     max-width: 100%;
 }
 
+/* Header */
 .main-header {
     font-family: 'Merriweather', serif;
     font-size: 32px;
@@ -42,10 +49,13 @@ body,
     margin-bottom: 12px;
 }
 
+/* --- FILE UPLOADER FULL FIX --- */
 [data-testid="stFileUploader"] {
     padding: 0px;
 }
 
+/* Kotak Utama Gradasi */
+/* Main Dropzone */
 [data-testid="stFileUploader"] section {
     background: linear-gradient(135deg, #28166f 0%, #0093dd 100%);
     padding: 20px;
@@ -55,6 +65,7 @@ body,
     color: white;
 }
 
+/* Text Colors */
 [data-testid="stFileUploader"] section>div,
 [data-testid="stFileUploader"] section span,
 [data-testid="stFileUploader"] section small,
@@ -62,21 +73,26 @@ body,
     color: white !important;
 }
 
+/* Text Colors - Versi Lebih Galak */
 [data-testid="stFileUploader"] section div[data-testid="stMarkdownContainer"] p {
     color: white !important;
     font-weight: 600 !important;
 }
 
+/* Tulisan Limit File (small text) */
 [data-testid="stFileUploader"] section small {
     color: white !important;
     opacity: 1 !important;
+    /* Paksa jadi 1 biar nggak transparan */
     font-size: 14px !important;
 }
 
+/* Tambahan: Label uploader kalau masih ada yang nyelip */
 [data-testid="stFileUploader"] label {
     color: white !important;
 }
 
+/* Button */
 [data-testid="stFileUploader"] button {
     background-color: white !important;
     color: #06215b !important;
@@ -91,6 +107,7 @@ body,
     color: #1E40AF !important;
 }
 
+/* Metrics Container */
 .metric-container {
     background: linear-gradient(135deg, #28166f 0%, #0093dd 100%);
     border-radius: 16px;
@@ -150,6 +167,7 @@ body,
     margin-right: 5px;
 }
 
+/* DataFrame Box */
 .dataframe-box {
     background-color: white;
     border: 1px solid #E2E8F0;
@@ -166,6 +184,7 @@ body,
     margin-bottom: 15px;
 }
 
+/* Blue Border Cards */
 .blue-border-card {
     background: white;
     border-top: 5px solid #2563EB;
@@ -190,6 +209,7 @@ body,
     margin-bottom: 20px;
 }
 
+/* Custom Blue Button */
 .stButton > button {
     background: linear-gradient(135deg, #28166f 0%, #0093dd 100%);
     padding: 5px;
@@ -203,31 +223,35 @@ body,
 .stButton > button:hover {
     background-color: #1565c0 !important;
 }
-
+/* Center table headers */
 thead tr th {
     text-align: center !important;
 }
 
 
+/* Custom Slider */
 .stslider > div:first-child {
     background-color: #07237e;
     height: 8px;
     border-radius: 4px;
 }
 
+/* Update di custom_style.css */
 [data-testid="stSidebar"] {
     background-color: #FFFFFF !important;
     border-right: 1px solid #E2E8F0 !important;
 }
 
+/* Teks dan icon sidebar warna gelap agar kontras */
 [data-testid="stSidebar"] .nav-link {
-    color: #475569 !important;
+    color: #475569 !important; /* Abu-abu gelap profesional */
 }
 
+/* State saat menu dipilih tetap pakai aksen biru */
 [data-testid="stSidebar"] .nav-link-selected {
-    background-color: #F1F5F9 !important; 
-    color: #2563EB !important;        
-    border-right: 4px solid #2563EB !important; 
+    background-color: #F1F5F9 !important; /* Background abu muda halus */
+    color: #2563EB !important;           /* Teks jadi biru terang */
+    border-right: 4px solid #2563EB !important; /* Garis penanda di kanan */
 }
 
 .contact-card {

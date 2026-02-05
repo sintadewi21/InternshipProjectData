@@ -288,6 +288,19 @@ else:
                         res = df.groupby(g_cols)[v_cols].agg(agg).reset_index()
                         html_table = res.to_html(classes='blue-table', escape=False, index=False, float_format="{:.2f}".format)
                         st.markdown(html_table, unsafe_allow_html=True)
+                        
+                        # Add Download Button for Grouped Data (Excel)
+                        buffer = io.BytesIO()
+                        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                            res.to_excel(writer, index=False, sheet_name='Sheet1')
+
+                        st.download_button(
+                            label="📥 Download Grouped Data as Excel (.xlsx)",
+                            data=buffer.getvalue(),
+                            file_name='grouped_data.xlsx',
+                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        )
+                        
                         if len(g_cols)==1 and len(v_cols)==1:
                             st.plotly_chart(visualization.plot_bar_chart(res, g_cols[0], v_cols[0]), use_container_width=True)
                     else:
@@ -378,7 +391,7 @@ else:
             target = c2.selectbox("Target:", num_cols)
             
             # Opsi Frekuensi Data untuk mengatasi error deteksi otomatis
-            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Otomatis", "Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
+            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
             
             method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linear)", "Backpropagation (Data Kompleks dan Non-Linear)"])
             steps = st.slider("Periods:", 1, 10, 5)

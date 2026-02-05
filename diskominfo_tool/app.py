@@ -356,7 +356,6 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- 6. FORECASTING ---
-        # --- 6. FORECASTING ---
         elif selected == "Forecasting":
             col_h1, col_h2 = st.columns([2, 1])
             with col_h1:
@@ -372,9 +371,9 @@ else:
             target = c2.selectbox("Target:", num_cols)
             
             # Opsi Frekuensi Data untuk mengatasi error deteksi otomatis
-            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Otomatis", "Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
+            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
             
-            method = st.selectbox("Method:", ["Holt's Linear Trend", "Backpropagation"])
+            method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linear)", "Backpropagation (Data Kompleks dan Non-Linear)"])
             steps = st.slider("Periods:", 1, 10, 5)
             
             if st.button("Forecast", use_container_width=True):
@@ -384,7 +383,6 @@ else:
                     "Bulanan (Monthly)": "M",
                     "Triwulan (Quarterly)": "Q", 
                     "Tahunan (Yearly)": "Y",
-                    "Otomatis": None
                 }
                 selected_freq = freq_map[freq_option]
 
@@ -397,7 +395,7 @@ else:
                     st.plotly_chart(visualization.plot_forecast(res['history'], res['forecast'], time_col, target), use_container_width=True)
                     st.dataframe(res['forecast'])
             st.markdown('</div>', unsafe_allow_html=True)
-            
+
         # --- 7. CONTACT INFO ---
         elif selected == "Contact Info":
             st.markdown('<div class="main-header">CONTACT INFO & FAQ</div>', unsafe_allow_html=True)

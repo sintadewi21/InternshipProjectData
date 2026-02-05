@@ -1,11 +1,9 @@
-import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_option_menu import option_menu
-from utils import loader, analysis, visualization
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+import io
+from utils import loader, analysis, visualization, report
 
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
@@ -14,14 +12,10 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 3. LOAD CUSTOM CSS ---
+# --- LOAD CUSTOM CSS ---
 def local_css(file_name):
-    full_path = os.path.join(BASE_DIR, file_name)
-    if os.path.exists(full_path):
-        with open(full_path, encoding='utf-8') as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    else:
-        pass
+    with open(file_name, encoding='utf-8') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 local_css("assets/custom_style.css")
 
@@ -29,27 +23,23 @@ local_css("assets/custom_style.css")
 if 'df' not in st.session_state:
     st.session_state['df'] = None
 
-# --- 5. SIDEBAR ---
+# --- SIDEBAR ---
 with st.sidebar:
-    # --- HEADER LOGO ---
     _, col_header, _ = st.columns([0.05, 0.9, 0.05])
     
     with col_header:
         c1, c2, c3 = st.columns([0.9, 1, 2.1])
         
-        logo_lamongan_path = os.path.join(BASE_DIR, "logo_lamongan.png")
-        logo_path = os.path.join(BASE_DIR, "logo.png")
-        
         with c1:
-            if os.path.exists(logo_lamongan_path):
-                st.image(logo_lamongan_path, use_container_width=True)
-            else:
+            try:
+                st.image("logo_lamongan.png", use_container_width=True)
+            except:
                 st.write("🏛️")
         
         with c2:
-            if os.path.exists(logo_path):
-                st.image(logo_path, use_container_width=True)
-            else:
+            try:
+                st.image("logo.png", use_container_width=True)
+            except:
                 st.write("🌐")
         
         with c3:
@@ -62,7 +52,7 @@ with st.sidebar:
     selected = option_menu(
         menu_title=None, 
         options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Contact Info"],
-        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "envelope"], 
+        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "key", "gear"],
         menu_icon="cast",
         default_index=0,
         styles={
@@ -97,8 +87,8 @@ if selected == "Overview":
     col_upload, col_metrics = st.columns([1.8, 1])
     with col_upload:
         st.markdown('<div class="section-title">Upload File</div>', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Upload Data", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
-        st.markdown('<div class="upload-footer" style="font-size:12px; margin-top:5px; text-align:center;">Make Sure the Input Data is in .csv, .xlsx, .xls format</div>', unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Upload Data", type=['xlsx', 'xls'], label_visibility="collapsed")
+        st.markdown('<div class="upload-footer" style="font-size:12px; margin-top:5px; text-align:center;">Make Sure the Input Data is in .xlsx, .xls format</div>', unsafe_allow_html=True)
         if uploaded_file is not None:
             df_loaded = loader.load_data(uploaded_file)
             if df_loaded is not None:
@@ -147,7 +137,9 @@ if selected == "Overview":
         st.dataframe(df, use_container_width=True, height=280)
         st.markdown('</div>', unsafe_allow_html=True)
         
+        # Bottom Cards
         col_b1, col_b2 = st.columns(2)
+        
         with col_b1:
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Data Type</div>', unsafe_allow_html=True)
             type_df = df.dtypes.astype(str).reset_index().rename(columns={0:'Type', 'index':'Column'})
@@ -158,7 +150,7 @@ if selected == "Overview":
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Missing Value</div>', unsafe_allow_html=True)
             info = analysis.get_basic_info(df)
             if info['missing_values'] > 0:
-                missing_df = info['missing_per_column'].reset_index().rename(columns={0:'Count', 'index':'Column'})
+                missing_df = pd.Series(info['missing_per_column']).reset_index().rename(columns={0:'Count', 'index':'Column'})
                 st.dataframe(missing_df, use_container_width=True, hide_index=True, height=250)
             else:
                 st.info("✓ No missing values")
@@ -182,13 +174,16 @@ else:
             if not stats.empty:
                 st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
                 
-                # Custom Download Button for Indonesian Format
-                csv_stats = stats.to_csv(sep=';', decimal=',').encode('utf-8')
+                # Custom Download Button (Excel)
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    stats.to_excel(writer, index=True, sheet_name='Sheet1')
+
                 st.download_button(
-                    label="📥 Download Statistics as CSV",
-                    data=csv_stats,
-                    file_name='descriptive_statistics.csv',
-                    mime='text/csv',
+                    label="📥 Download Statistics as Excel (.xlsx)",
+                    data=buffer.getvalue(),
+                    file_name='descriptive_statistics.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 )
             else:
                 st.warning("Numerical Columns Not Found.")
@@ -201,17 +196,20 @@ else:
                 freq = analysis.get_frequency_dist(df, sel_cat)
                 st.dataframe(freq, use_container_width=True)
                 
-                # Custom Download Button
-                csv_freq = freq.to_csv(sep=';', decimal=',', index=False).encode('utf-8')
+                # Custom Download Button (Excel)
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    freq.to_excel(writer, index=False, sheet_name='Sheet1')
+
                 st.download_button(
-                    label="📥 Download Frequency as CSV",
-                    data=csv_freq,
-                    file_name=f'frequency_{sel_cat}.csv',
-                    mime='text/csv',
+                    label="📥 Download Frequency as Excel (.xlsx)",
+                    data=buffer.getvalue(),
+                    file_name=f'frequency_{sel_cat}.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 )
             else:
                 st.info("Categorical columns not found.")
-            st.markdown('</div>', unsafe_allow_html=True) 
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # --- OUTLIER DETECTION ---
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Outlier Detection</div>', unsafe_allow_html=True)
@@ -281,6 +279,19 @@ else:
                         res = df.groupby(g_cols)[v_cols].agg(agg).reset_index()
                         html_table = res.to_html(classes='blue-table', escape=False, index=False, float_format="{:.2f}".format)
                         st.markdown(html_table, unsafe_allow_html=True)
+                        
+                        # Add Download Button for Grouped Data (Excel)
+                        buffer = io.BytesIO()
+                        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                            res.to_excel(writer, index=False, sheet_name='Sheet1')
+
+                        st.download_button(
+                            label="📥 Download Grouped Data as Excel (.xlsx)",
+                            data=buffer.getvalue(),
+                            file_name='grouped_data.xlsx',
+                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        )
+                        
                         if len(g_cols)==1 and len(v_cols)==1:
                             st.plotly_chart(visualization.plot_bar_chart(res, g_cols[0], v_cols[0]), use_container_width=True)
                     else:
@@ -291,6 +302,7 @@ else:
 
         # --- 4. SIMPLE REGRESSION ---
         elif selected == "Simple Regression":
+            # --- HEADER ---
             col_h1, col_h2 = st.columns([2, 1])
             with col_h1:
                 st.markdown('<div class="main-header">SIMPLE REGRESSION</div>', unsafe_allow_html=True)
@@ -309,15 +321,19 @@ else:
                     if res:
                         st.success(f"Model: Y = {res['intercept']:.2f} + {res['slope']:.2f}X")
                         
+                        # Interpretasi R2
                         st.metric("R-Squared (Koefisien Determinasi)", f"{res['r2']:.4f}")
                         st.info(f"💡 *Interpretasi R-Squared:* Nilai *{res['r2']:.4f}* menunjukkan bahwa *{res['r2']*100:.2f}%* variasi dari **{y}** dapat dijelaskan oleh **{x}**. Sisanya sebesar *{100 - res['r2']*100:.2f}%* dijelaskan oleh faktor lain di luar model ini.")
 
+                        # Interpretasi Koefisien
                         st.markdown("### Interpretation of the Slope Coefficient")
                         direction = "naik" if res['slope'] > 0 else "turun"
                         st.write(f"- Setiap kenaikan 1 satuan **{x}**, maka **{y}** diperkirakan akan **{direction}** sebesar **{abs(res['slope']):.4f}** (dengan asumsi faktor lain tetap).")
 
+                        # Plot Regresi
                         st.plotly_chart(visualization.plot_regression(res['X'], res['y'], res['y_pred'], x, y), use_container_width=True)
                         
+                        # Plot Actual vs Predicted (Tambahan agar sama dengan multiple)
                         st.markdown("### Evaluation Model (Actual vs Predicted)")
                         st.plotly_chart(visualization.plot_actual_vs_predicted(res['y'], res['y_pred']), use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -371,9 +387,9 @@ else:
             target = c2.selectbox("Target:", num_cols)
             
             # Opsi Frekuensi Data untuk mengatasi error deteksi otomatis
-            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
+            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", [ "Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
             
-            method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linear)", "Backpropagation (Data Kompleks dan Non-Linear)"])
+            method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linier)", "Backpropagation (Data Kompleks dan Nonlinier)"])
             steps = st.slider("Periods:", 1, 10, 5)
             
             if st.button("Forecast", use_container_width=True):
@@ -383,6 +399,7 @@ else:
                     "Bulanan (Monthly)": "M",
                     "Triwulan (Quarterly)": "Q", 
                     "Tahunan (Yearly)": "Y",
+                   
                 }
                 selected_freq = freq_map[freq_option]
 
@@ -394,18 +411,32 @@ else:
                 if res:
                     st.plotly_chart(visualization.plot_forecast(res['history'], res['forecast'], time_col, target), use_container_width=True)
                     st.dataframe(res['forecast'])
+
+                    # Custom Download Button for Forecast (Excel)
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                        res['forecast'].to_excel(writer, index=False, sheet_name='Sheet1')
+
+                    st.download_button(
+                        label="📥 Download Forecast as Excel (.xlsx)",
+                        data=buffer.getvalue(),
+                        file_name='forecast_result.xlsx',
+                        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    )
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- 7. CONTACT INFO ---
         elif selected == "Contact Info":
             st.markdown('<div class="main-header">CONTACT INFO & FAQ</div>', unsafe_allow_html=True)
             
+            # Kalimat pengantar Bahasa Inggris
             st.markdown("""
                 <p style="color: #64748B; font-size: 16px; margin-bottom: 30px;">
                     If you have any questions or concerns, feel free to contact one of the following developers.
                 </p>
             """, unsafe_allow_html=True)
             
+            # Membuat layout 50% - 50% untuk dua developer
             col_dev1, col_dev2 = st.columns([1, 1])
             
             subject = "Diskominfo Data Tool Inquiry"

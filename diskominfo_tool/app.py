@@ -211,7 +211,7 @@ else:
                 )
             else:
                 st.info("Categorical columns not found.")
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True) 
 
             # --- OUTLIER DETECTION ---
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Outlier Detection</div>', unsafe_allow_html=True)
@@ -356,6 +356,7 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- 6. FORECASTING ---
+        # --- 6. FORECASTING ---
         elif selected == "Forecasting":
             col_h1, col_h2 = st.columns([2, 1])
             with col_h1:
@@ -369,20 +370,34 @@ else:
             c1, c2 = st.columns(2)
             time_col = c1.selectbox("Time Column:", all_cols)
             target = c2.selectbox("Target:", num_cols)
+            
+            # Opsi Frekuensi Data untuk mengatasi error deteksi otomatis
+            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Otomatis", "Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
+            
             method = st.selectbox("Method:", ["Holt's Linear Trend", "Backpropagation"])
             steps = st.slider("Periods:", 1, 10, 5)
             
             if st.button("Forecast", use_container_width=True):
+                # Mapping frekuensi ke kode Pandas
+                freq_map = {
+                    "Harian (Daily)": "D",
+                    "Bulanan (Monthly)": "M",
+                    "Triwulan (Quarterly)": "Q", 
+                    "Tahunan (Yearly)": "Y",
+                    "Otomatis": None
+                }
+                selected_freq = freq_map[freq_option]
+
                 if method == "Holt's Linear Trend":
-                    res = analysis.perform_forecasting(df, time_col, target, periods=steps)
+                    res = analysis.perform_forecasting(df, time_col, target, periods=steps, freq_option=selected_freq)
                 else:
-                    res = analysis.perform_backpropagation_forecasting(df, time_col, target, periods=steps)
+                    res = analysis.perform_backpropagation_forecasting(df, time_col, target, periods=steps, freq_option=selected_freq)
                 
                 if res:
                     st.plotly_chart(visualization.plot_forecast(res['history'], res['forecast'], time_col, target), use_container_width=True)
                     st.dataframe(res['forecast'])
             st.markdown('</div>', unsafe_allow_html=True)
-
+            
         # --- 7. CONTACT INFO ---
         elif selected == "Contact Info":
             st.markdown('<div class="main-header">CONTACT INFO & FAQ</div>', unsafe_allow_html=True)

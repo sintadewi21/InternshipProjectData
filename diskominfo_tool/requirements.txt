@@ -7,3 +7,5 @@ scikit-learn
 scipy
 streamlit-option-menu
 statsmodels
+Pillow
+scikit-learn

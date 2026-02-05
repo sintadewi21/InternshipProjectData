@@ -1,4 +1,5 @@
 import os
+import io
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -171,7 +172,7 @@ else:
     else:
         df = st.session_state['df']
 
-        # --- 2. STATISTIK DESKRIPTIF ---
+         # --- 2. STATISTIK DESKRIPTIF ---
         if selected == "Descriptive Statistics":
             col_h1, col_h2 = st.columns([2, 1])
             with col_h1:
@@ -182,13 +183,16 @@ else:
             if not stats.empty:
                 st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
                 
-                # Custom Download Button for Indonesian Format
-                csv_stats = stats.to_csv(sep=';', decimal=',').encode('utf-8')
+                # Custom Download Button (Excel)
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    stats.to_excel(writer, index=True, sheet_name='Sheet1')
+
                 st.download_button(
-                    label="📥 Download Statistics as CSV",
-                    data=csv_stats,
-                    file_name='descriptive_statistics.csv',
-                    mime='text/csv',
+                    label="📥 Download Statistics as Excel (.xlsx)",
+                    data=buffer.getvalue(),
+                    file_name='descriptive_statistics.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 )
             else:
                 st.warning("Numerical Columns Not Found.")
@@ -201,17 +205,20 @@ else:
                 freq = analysis.get_frequency_dist(df, sel_cat)
                 st.dataframe(freq, use_container_width=True)
                 
-                # Custom Download Button
-                csv_freq = freq.to_csv(sep=';', decimal=',', index=False).encode('utf-8')
+                # Custom Download Button (Excel)
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    freq.to_excel(writer, index=False, sheet_name='Sheet1')
+
                 st.download_button(
-                    label="📥 Download Frequency as CSV",
-                    data=csv_freq,
-                    file_name=f'frequency_{sel_cat}.csv',
-                    mime='text/csv',
+                    label="📥 Download Frequency as Excel (.xlsx)",
+                    data=buffer.getvalue(),
+                    file_name=f'frequency_{sel_cat}.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 )
             else:
                 st.info("Categorical columns not found.")
-            st.markdown('</div>', unsafe_allow_html=True) 
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # --- OUTLIER DETECTION ---
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Outlier Detection</div>', unsafe_allow_html=True)
@@ -226,10 +233,10 @@ else:
                     
                 with col_o2:
                     outlier_info = analysis.get_outliers_iqr(df, sel_outlier)
-                    st.write(f"**Outlier Summary:**")
-                    st.write(f"- Lower Bound: `{outlier_info['lower_bound']:.2f}`")
-                    st.write(f"- Upper Bound: `{outlier_info['upper_bound']:.2f}`")
-                    st.write(f"- Outlier Count: `{outlier_info['count']}`")
+                    st.write(f"*Outlier Summary:*")
+                    st.write(f"- Lower Bound: {outlier_info['lower_bound']:.2f}")
+                    st.write(f"- Upper Bound: {outlier_info['upper_bound']:.2f}")
+                    st.write(f"- Outlier Count: {outlier_info['count']}")
                     
                     if outlier_info['count'] > 0:
                         with st.expander("View Outlier Data"):
@@ -239,7 +246,7 @@ else:
             else:
                 st.info("No Numeric Columns to Analyze.")
             st.markdown('</div>', unsafe_allow_html=True)
-
+            
         # --- 3. GROUPING ---
         elif selected == "Grouping":
             col_h1, col_h2 = st.columns([2, 1])
@@ -394,6 +401,22 @@ else:
                 if res:
                     st.plotly_chart(visualization.plot_forecast(res['history'], res['forecast'], time_col, target), use_container_width=True)
                     st.dataframe(res['forecast'])
+
+                    # Ensure correct import for BytesIO
+                    import io
+
+                    # Fix the issue with io.BytesIO
+                    buffer = io.BytesIO()
+                    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                        res['forecast'].to_excel(writer, index=False, sheet_name='Sheet1')
+                    buffer.seek(0)
+
+                    st.download_button(
+                        label="📥 Download Forecast as Excel (.xlsx)",
+                        data=buffer.getvalue(),
+                        file_name='forecast_result.xlsx',
+                        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    )
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- 7. CONTACT INFO ---

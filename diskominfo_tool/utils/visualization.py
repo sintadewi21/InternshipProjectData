@@ -149,3 +149,39 @@ def plot_forecast(history_df, forecast_df, time_col, target_col):
     )
     
     return fig
+
+def plot_clustering_2d(df, x_col, y_col, cluster_col):
+    """
+    Creates a 2D scatter plot for clustering results.
+
+    Parameters:
+        df (pd.DataFrame): The dataframe containing the data.
+        x_col (str): The column name for the x-axis.
+        y_col (str): The column name for the y-axis.
+        cluster_col (str): The column name for the cluster labels.
+
+    Returns:
+        plotly.graph_objects.Figure: A scatter plot with clusters.
+    """
+    if df is None or x_col not in df.columns or y_col not in df.columns or cluster_col not in df.columns:
+        return None
+
+    fig = px.scatter(
+        df,
+        x=x_col,
+        y=y_col,
+        color=cluster_col,
+        title=f'Clustering Visualization: {x_col} vs {y_col}',
+        labels={
+            x_col: x_col,
+            y_col: y_col,
+            cluster_col: 'Cluster'
+        },
+        template='plotly_white',
+        opacity=0.7
+    )
+
+    fig.update_traces(marker=dict(size=10, line=dict(width=1, color='DarkSlateGrey')))
+    fig.update_layout(legend_title_text='Cluster')
+
+    return fig

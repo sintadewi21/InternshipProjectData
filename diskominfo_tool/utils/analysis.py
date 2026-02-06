@@ -5,6 +5,11 @@ from sklearn.metrics import r2_score
 from sklearn.neural_network import MLPRegressor
 from statsmodels.tsa.holtwinters import Holt
 import streamlit as st
+from scipy.stats import shapiro
+from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import statsmodels.api as sm
 
 def get_basic_info(df):
     """Returns basic information about the dataframe."""
@@ -206,3 +211,63 @@ def perform_backpropagation_forecasting(df, time_col, target_col, periods=5, fre
     except Exception as e:
         print(f"Backprop Error: {e}")
         return None
+
+def check_assumptions(residuals, X):
+    """
+    Perform classic assumption tests for regression models.
+
+    Parameters:
+        residuals (pd.Series or np.array): Residuals from the regression model.
+        X (pd.DataFrame): Independent variables used in the regression model.
+
+    Returns:
+        dict: Results of assumption tests (normality, homoscedasticity, autocorrelation, multicollinearity).
+    """
+    results = {}
+
+    # 1. Normality Test (Shapiro-Wilk Test)
+    try:
+        shapiro_test = shapiro(residuals)
+        results['normality'] = {
+            'p_value': shapiro_test.pvalue,
+            'is_normal': shapiro_test.pvalue > 0.05
+        }
+    except Exception as e:
+        results['normality'] = None
+        print(f"Normality Test Error: {e}")
+
+    # 2. Homoscedasticity Test (Breusch-Pagan Test)
+    try:
+        lm_test = het_breuschpagan(residuals, sm.add_constant(X))
+        results['homoscedasticity'] = {
+            'p_value': lm_test[1],
+            'is_homoscedastic': lm_test[1] > 0.05
+        }
+    except Exception as e:
+        results['homoscedasticity'] = None
+        print(f"Homoscedasticity Test Error: {e}")
+
+    # 3. Autocorrelation Test (Durbin-Watson Test)
+    try:
+        dw_stat = durbin_watson(residuals)
+        results['autocorrelation'] = {
+            'statistic': dw_stat,
+            'is_correlated': not (1.5 <= dw_stat <= 2.5)
+        }
+    except Exception as e:
+        results['autocorrelation'] = None
+        print(f"Autocorrelation Test Error: {e}")
+
+    # 4. Multicollinearity Test (Variance Inflation Factor - VIF)
+    try:
+        vif_data = pd.DataFrame()
+        vif_data['Variable'] = X.columns
+        vif_data['VIF'] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+        results['multicollinearity'] = {
+            'data': vif_data
+        }
+    except Exception as e:
+        results['multicollinearity'] = None
+        print(f"Multicollinearity Test Error: {e}")
+
+    return results

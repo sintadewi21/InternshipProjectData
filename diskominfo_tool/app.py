@@ -1,12 +1,11 @@
-import os
-import io
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_option_menu import option_menu
-from utils import loader, analysis, visualization
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+import io
+from utils import loader, analysis, visualization, report, clustering
+import importlib
+importlib.reload(analysis)
 
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
@@ -15,42 +14,58 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 3. LOAD CUSTOM CSS ---
+# --- LOAD CUSTOM CSS ---
+import base64
+
+# --- LOAD CUSTOM CSS ---
 def local_css(file_name):
-    full_path = os.path.join(BASE_DIR, file_name)
-    if os.path.exists(full_path):
-        with open(full_path, encoding='utf-8') as f:
-            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
-    else:
-        pass
+    with open(file_name, encoding='utf-8') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def set_background(image_file):
+    try:
+        with open(image_file, "rb") as f:
+            img_data = f.read()
+        b64_encoded = base64.b64encode(img_data).decode()
+        style = f"""
+            <style>
+            [data-testid="stAppViewContainer"] {{
+                background-image: linear-gradient(rgba(248, 250, 252), rgba(248, 250, 252)), url(data:image/png;base64,{b64_encoded});
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+            }}
+            </style>
+        """
+        st.markdown(style, unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass 
 
 local_css("assets/custom_style.css")
+set_background("assets/logo_bg.jpg")
 
 # --- INISIALISASI SESSION STATE ---
 if 'df' not in st.session_state:
     st.session_state['df'] = None
 
-# --- 5. SIDEBAR ---
+# --- SIDEBAR ---
 with st.sidebar:
-    # --- HEADER LOGO ---
     _, col_header, _ = st.columns([0.05, 0.9, 0.05])
     
     with col_header:
         c1, c2, c3 = st.columns([0.9, 1, 2.1])
         
-        logo_lamongan_path = os.path.join(BASE_DIR, "logo_lamongan.png")
-        logo_path = os.path.join(BASE_DIR, "logo.png")
-        
         with c1:
-            if os.path.exists(logo_lamongan_path):
-                st.image(logo_lamongan_path, use_container_width=True)
-            else:
+            try:
+                st.image("logo_lamongan.png", use_container_width=True)
+            except:
                 st.write("🏛️")
         
         with c2:
-            if os.path.exists(logo_path):
-                st.image(logo_path, use_container_width=True)
-            else:
+            try:
+                st.image("logo.png", use_container_width=True)
+            except:
                 st.write("🌐")
         
         with c3:
@@ -62,8 +77,8 @@ with st.sidebar:
     
     selected = option_menu(
         menu_title=None, 
-        options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Contact Info"],
-        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "envelope"], 
+        options=["Overview", "Descriptive Statistics", "Grouping", "Simple Regression", "Multiple Regression", "Forecasting", "Clustering", "Contact Info"],
+        icons=["house", "clipboard-data", "people", "graph-up", "bar-chart-line", "clock-history", "diagram-3", "key", "gear"],
         menu_icon="cast",
         default_index=0,
         styles={
@@ -98,8 +113,8 @@ if selected == "Overview":
     col_upload, col_metrics = st.columns([1.8, 1])
     with col_upload:
         st.markdown('<div class="section-title">Upload File</div>', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Upload Data", type=['csv', 'xlsx', 'xls'], label_visibility="collapsed")
-        st.markdown('<div class="upload-footer" style="font-size:12px; margin-top:5px; text-align:center;">Make Sure the Input Data is in .csv, .xlsx, .xls format</div>', unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Upload Data", type=['xlsx', 'xls'], label_visibility="collapsed")
+        st.markdown('<div class="upload-footer" style="font-size:12px; margin-top:5px; text-align:center;">Make Sure the Input Data is in .xlsx, .xls format</div>', unsafe_allow_html=True)
         if uploaded_file is not None:
             df_loaded = loader.load_data(uploaded_file)
             if df_loaded is not None:
@@ -148,7 +163,9 @@ if selected == "Overview":
         st.dataframe(df, use_container_width=True, height=280)
         st.markdown('</div>', unsafe_allow_html=True)
         
+        # Bottom Cards
         col_b1, col_b2 = st.columns(2)
+        
         with col_b1:
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Data Type</div>', unsafe_allow_html=True)
             type_df = df.dtypes.astype(str).reset_index().rename(columns={0:'Type', 'index':'Column'})
@@ -159,7 +176,7 @@ if selected == "Overview":
             st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Missing Value</div>', unsafe_allow_html=True)
             info = analysis.get_basic_info(df)
             if info['missing_values'] > 0:
-                missing_df = info['missing_per_column'].reset_index().rename(columns={0:'Count', 'index':'Column'})
+                missing_df = pd.Series(info['missing_per_column']).reset_index().rename(columns={0:'Count', 'index':'Column'})
                 st.dataframe(missing_df, use_container_width=True, hide_index=True, height=250)
             else:
                 st.info("✓ No missing values")
@@ -172,7 +189,7 @@ else:
     else:
         df = st.session_state['df']
 
-         # --- 2. STATISTIK DESKRIPTIF ---
+        # --- 2. STATISTIK DESKRIPTIF ---
         if selected == "Descriptive Statistics":
             col_h1, col_h2 = st.columns([2, 1])
             with col_h1:
@@ -233,10 +250,10 @@ else:
                     
                 with col_o2:
                     outlier_info = analysis.get_outliers_iqr(df, sel_outlier)
-                    st.write(f"*Outlier Summary:*")
-                    st.write(f"- Lower Bound: {outlier_info['lower_bound']:.2f}")
-                    st.write(f"- Upper Bound: {outlier_info['upper_bound']:.2f}")
-                    st.write(f"- Outlier Count: {outlier_info['count']}")
+                    st.write(f"**Outlier Summary:**")
+                    st.write(f"- Lower Bound: `{outlier_info['lower_bound']:.2f}`")
+                    st.write(f"- Upper Bound: `{outlier_info['upper_bound']:.2f}`")
+                    st.write(f"- Outlier Count: `{outlier_info['count']}`")
                     
                     if outlier_info['count'] > 0:
                         with st.expander("View Outlier Data"):
@@ -246,7 +263,7 @@ else:
             else:
                 st.info("No Numeric Columns to Analyze.")
             st.markdown('</div>', unsafe_allow_html=True)
-            
+
         # --- 3. GROUPING ---
         elif selected == "Grouping":
             col_h1, col_h2 = st.columns([2, 1])
@@ -311,6 +328,7 @@ else:
 
         # --- 4. SIMPLE REGRESSION ---
         elif selected == "Simple Regression":
+            # --- HEADER ---
             col_h1, col_h2 = st.columns([2, 1])
             with col_h1:
                 st.markdown('<div class="main-header">SIMPLE REGRESSION</div>', unsafe_allow_html=True)
@@ -329,17 +347,59 @@ else:
                     if res:
                         st.success(f"Model: Y = {res['intercept']:.2f} + {res['slope']:.2f}X")
                         
+                        # Interpretasi R2
                         st.metric("R-Squared (Koefisien Determinasi)", f"{res['r2']:.4f}")
                         st.info(f"💡 *Interpretasi R-Squared:* Nilai *{res['r2']:.4f}* menunjukkan bahwa *{res['r2']*100:.2f}%* variasi dari **{y}** dapat dijelaskan oleh **{x}**. Sisanya sebesar *{100 - res['r2']*100:.2f}%* dijelaskan oleh faktor lain di luar model ini.")
 
+                        # Interpretasi Koefisien
                         st.markdown("### Interpretation of the Slope Coefficient")
                         direction = "naik" if res['slope'] > 0 else "turun"
                         st.write(f"- Setiap kenaikan 1 satuan **{x}**, maka **{y}** diperkirakan akan **{direction}** sebesar **{abs(res['slope']):.4f}** (dengan asumsi faktor lain tetap).")
 
+                        # Plot Regresi
                         st.plotly_chart(visualization.plot_regression(res['X'], res['y'], res['y_pred'], x, y), use_container_width=True)
                         
+                        # Plot Actual vs Predicted (Tambahan agar sama dengan multiple)
                         st.markdown("### Evaluation Model (Actual vs Predicted)")
                         st.plotly_chart(visualization.plot_actual_vs_predicted(res['y'], res['y_pred']), use_container_width=True)
+
+                        # --- Assumption Tests ---
+                        with st.expander("🔍 Classic Assumption Tests (Uji Asumsi Klasik)", expanded=True):
+                            residuals = res['y'] - res['y_pred']
+                            assumptions = analysis.check_assumptions(residuals, res['X'])
+                            
+                            # 1. Normality
+                            if assumptions['normality']:
+                                st.write("#### 1. Normalitas Error (Normality Test)")
+                                p_val = assumptions['normality']['p_value']
+                                status = "Normal Distribution ✅" if assumptions['normality']['is_normal'] else "Not Normal ❌"
+                                st.write(f"- P-Value: `{p_val:.4f}`")
+                                st.write(f"- Result: **{status}**")
+                                st.caption("💡 **Interpretasi:** Nilai residual (error) harus berdistribusi normal agar analisis statistik valid. Jika P-Value > 0.05, maka data normal.")
+
+                            # 2. Homoscedasticity
+                            if assumptions['homoscedasticity']:
+                                st.write("#### 2. Homoskedastisitas (Breusch-Pagan)")
+                                p_val_bp = assumptions['homoscedasticity']['p_value']
+                                status_bp = "Homoscedastic (Constant Variance) ✅" if assumptions['homoscedasticity']['is_homoscedastic'] else "Heteroscedastic (Non-constant Variance) ❌"
+                                st.write(f"- P-Value: `{p_val_bp:.4f}`")
+                                st.write(f"- Result: **{status_bp}**")
+                                st.caption("💡 **Interpretasi:** Varian error harus konstan. Jika terjadi heteroskedastisitas (varian tidak konstan), prediksi model menjadi kurang akurat.")
+
+                            # 3. Autocorrelation
+                            if assumptions['autocorrelation']:
+                                st.write("#### 3. Autokorelasi (Durbin-Watson)")
+                                dw = assumptions['autocorrelation']['statistic']
+                                status_dw = "No Autocorrelation ✅" if assumptions['autocorrelation']['is_correlated'] == False else "Autocorrelation Detected ⚠️"
+                                st.write(f"- Durbin-Watson Statistic: `{dw:.4f}`")
+                                st.write(f"- Result: **{status_dw}** (Range Ideal: 1.5 - 2.5)")
+                                st.caption("💡 **Interpretasi:** Tidak boleh ada hubungan antar error data sebelumnya. Jika nilai DW antara 1.5 - 2.5, maka aman dari autokorelasi.")
+
+                            # 4. Multicollinearity
+                            if assumptions['multicollinearity']:
+                                st.write("#### 4. Multikolinearitas (VIF)")
+                                st.dataframe(assumptions['multicollinearity']['data'])
+                                st.caption("💡 **Interpretasi:** VIF (Variance Inflation Factor) > 10 menandakan adanya korelasi kuat antar variabel independen, yang sebaiknya dihindari.")
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- 5. MULTIPLE REGRESSION ---
@@ -373,6 +433,48 @@ else:
                             
                             with st.expander("Check Coefficient Values"):
                                 st.write(res['coefficients'])
+
+                            # --- Assumption Tests ---
+                            with st.expander("🔍 Classic Assumption Tests (Uji Asumsi Klasik)", expanded=True):
+                                residuals = res['y_actual'] - res['y_pred']
+                                
+                                # Re-construct X dataframe for checks
+                                X_df = df[xs].loc[res['y_actual'].index] # Ensure indices match
+                                
+                                assumptions = analysis.check_assumptions(residuals, X_df)
+                                
+                                # 1. Normality
+                                if assumptions['normality']:
+                                    st.write("#### 1. Normalitas Error (Normality Test)")
+                                    p_val = assumptions['normality']['p_value']
+                                    status = "Normal Distribution ✅" if assumptions['normality']['is_normal'] else "Not Normal ❌"
+                                    st.write(f"- P-Value: `{p_val:.4f}`")
+                                    st.write(f"- Result: **{status}**")
+                                    st.caption("💡 **Interpretasi:** Nilai residual (error) harus berdistribusi normal agar analisis statistik valid. Jika P-Value > 0.05, maka data normal.")
+
+                                # 2. Homoscedasticity
+                                if assumptions['homoscedasticity']:
+                                    st.write("#### 2. Homoskedastisitas (Breusch-Pagan)")
+                                    p_val_bp = assumptions['homoscedasticity']['p_value']
+                                    status_bp = "Homoscedastic (Constant Variance) ✅" if assumptions['homoscedasticity']['is_homoscedastic'] else "Heteroscedastic (Non-constant Variance) ❌"
+                                    st.write(f"- P-Value: `{p_val_bp:.4f}`")
+                                    st.write(f"- Result: **{status_bp}**")
+                                    st.caption("💡 **Interpretasi:** Varian error harus konstan. Jika terjadi heteroskedastisitas (varian tidak konstan), prediksi model menjadi kurang akurat.")
+
+                                # 3. Autocorrelation
+                                if assumptions['autocorrelation']:
+                                    st.write("#### 3. Autokorelasi (Durbin-Watson)")
+                                    dw = assumptions['autocorrelation']['statistic']
+                                    status_dw = "No Autocorrelation ✅" if assumptions['autocorrelation']['is_correlated'] == False else "Autocorrelation Detected ⚠️"
+                                    st.write(f"- Durbin-Watson Statistic: `{dw:.4f}`")
+                                    st.write(f"- Result: **{status_dw}** (Range Ideal: 1.5 - 2.5)")
+                                    st.caption("💡 **Interpretasi:** Tidak boleh ada hubungan antar error data sebelumnya. Jika nilai DW antara 1.5 - 2.5, maka aman dari autokorelasi.")
+                                
+                                # 4. Multicollinearity
+                                if assumptions['multicollinearity']:
+                                    st.write("#### 4. Multikolinearitas (VIF)")
+                                    st.dataframe(assumptions['multicollinearity']['data'])
+                                    st.caption("💡 **Interpretasi:** VIF (Variance Inflation Factor) > 10 menandakan adanya korelasi kuat antar variabel independen, yang sebaiknya dihindari.")
             st.markdown('</div>', unsafe_allow_html=True)
 
         # --- 6. FORECASTING ---
@@ -391,9 +493,9 @@ else:
             target = c2.selectbox("Target:", num_cols)
             
             # Opsi Frekuensi Data untuk mengatasi error deteksi otomatis
-            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", ["Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
+            freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", [ "Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
             
-            method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linear)", "Backpropagation (Data Kompleks dan Non-Linear)"])
+            method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linier)", "Backpropagation (Data Kompleks dan Nonlinier)"])
             steps = st.slider("Periods:", 1, 10, 5)
             
             if st.button("Forecast", use_container_width=True):
@@ -403,6 +505,7 @@ else:
                     "Bulanan (Monthly)": "M",
                     "Triwulan (Quarterly)": "Q", 
                     "Tahunan (Yearly)": "Y",
+                   
                 }
                 selected_freq = freq_map[freq_option]
 
@@ -415,14 +518,10 @@ else:
                     st.plotly_chart(visualization.plot_forecast(res['history'], res['forecast'], time_col, target), use_container_width=True)
                     st.dataframe(res['forecast'])
 
-                    # Ensure correct import for BytesIO
-                    import io
-
-                    # Fix the issue with io.BytesIO
+                    # Custom Download Button for Forecast (Excel)
                     buffer = io.BytesIO()
                     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                         res['forecast'].to_excel(writer, index=False, sheet_name='Sheet1')
-                    buffer.seek(0)
 
                     st.download_button(
                         label="📥 Download Forecast as Excel (.xlsx)",
@@ -432,16 +531,84 @@ else:
                     )
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # --- 7. CONTACT INFO ---
+        # --- 7. CLUSTERING ---
+        elif selected == "Clustering":
+            col_h1, col_h2 = st.columns([2, 1])
+            with col_h1:
+                st.markdown('<div class="main-header">K-MEANS CLUSTERING</div>', unsafe_allow_html=True)
+            with col_h2:
+                st.markdown(""" """, unsafe_allow_html=True)
+
+            # Step 1: Select Features
+            st.markdown('<div class="statsdata-box" style="font-color: #FFFFFF;">Clustering Configuration</div>', unsafe_allow_html=True)
+            num_cols = df.select_dtypes(include=['number']).columns.tolist()
+            
+            if len(num_cols) >= 2:
+                features = st.multiselect("Select Features (Numeric Only):", num_cols, default=num_cols[:2])
+                
+                if len(features) >= 2:
+                    # Step 2: Determine Optimal K
+                    with st.expander("Determine Optimal Number of Clusters (K)"):
+                        st.info("Use the Elbow Method and Silhouette Score to find the best K.")
+                        if st.button("Check Optimal K"):
+                            metrics = clustering.calculate_metrics(df, features)
+                            if metrics:
+                                c1, c2 = st.columns(2)
+                                with c1:
+                                    st.plotly_chart(visualization.plot_elbow_curve(metrics['k'], metrics['inertia']), use_container_width=True)
+                                with c2:
+                                    st.plotly_chart(visualization.plot_silhouette_curve(metrics['k'], metrics['silhouette']), use_container_width=True)
+                    
+                    # Step 3: Run Clustering
+                    k_value = st.slider("Select Number of Clusters (K):", min_value=2, max_value=10, value=3)
+                    
+                    if st.button("Run Clustering", key='run_clustering', use_container_width=True):
+                        res_df, model = clustering.perform_kmeans(df, features, k_value)
+                        
+                        if res_df is not None:
+                            st.success(f"Clustering completed with K={k_value}!")
+                            
+                            # Result Table
+                            st.write("### Clustering Results")
+                            st.dataframe(res_df, use_container_width=True)
+                            
+                            # Visualization
+                            st.write("### Cluster Visualization (2D)")
+                            col_x, col_y = st.columns(2)
+                            x_axis = col_x.selectbox("X Axis:", features, index=0)
+                            y_axis = col_y.selectbox("Y Axis:", features, index=1 if len(features)>1 else 0)
+                            
+                            st.plotly_chart(visualization.plot_clustering_2d(res_df, x_axis, y_axis, 'Cluster'), use_container_width=True)
+                            
+                            # Download
+                            buffer = io.BytesIO()
+                            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                                res_df.to_excel(writer, index=False, sheet_name='Clustering_Result')
+                                
+                            st.download_button(
+                                label="📥 Download Clustering Results (.xlsx)",
+                                data=buffer.getvalue(),
+                                file_name='clustering_result.xlsx',
+                                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            )
+                else:
+                    st.warning("Please select at least 2 features.")
+            else:
+                 st.warning("Not enough numeric columns for clustering.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # --- 8. CONTACT INFO ---
         elif selected == "Contact Info":
             st.markdown('<div class="main-header">CONTACT INFO & FAQ</div>', unsafe_allow_html=True)
             
+            # Kalimat pengantar Bahasa Inggris
             st.markdown("""
                 <p style="color: #64748B; font-size: 16px; margin-bottom: 30px;">
                     If you have any questions or concerns, feel free to contact one of the following developers.
                 </p>
             """, unsafe_allow_html=True)
             
+            # Membuat layout 50% - 50% untuk dua developer
             col_dev1, col_dev2 = st.columns([1, 1])
             
             subject = "Diskominfo Data Tool Inquiry"

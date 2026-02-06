@@ -19,8 +19,6 @@ def perform_kmeans(df, features, n_clusters):
         return None, None
         
     X = df[features].copy()
-    
-    # Drop NA untuk menghindari error sklearn
     X = X.dropna()
     
     if X.empty:
@@ -29,12 +27,9 @@ def perform_kmeans(df, features, n_clusters):
     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     kmeans.fit(X)
     
-    # Buat copy dataframe hasil agar tidak merubah dataframe asli secara inplace yang tidak diinginkan di sesi lain
     result_df = df.copy()
-    # Hanya isi baris yang tidak dropped
     result_df.loc[X.index, 'Cluster'] = kmeans.labels_
     
-    # Jadikan Cluster sebagai kategori/string agar dianggap kategorikal saat plotting
     result_df['Cluster'] = result_df['Cluster'].astype('Int64').astype(str)
     
     return result_df, kmeans
@@ -68,7 +63,6 @@ def calculate_metrics(df, features, max_k=10):
         kmeans.fit(X)
         inertia.append(kmeans.inertia_)
         
-        # Silhouette score butuh minimal 2 cluster dan 2 sampel
         if len(X) > k:
             score = silhouette_score(X, kmeans.labels_)
             silhouette.append(score)

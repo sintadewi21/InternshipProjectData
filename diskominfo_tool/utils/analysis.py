@@ -73,7 +73,7 @@ def perform_linear_regression(df, x_col, y_col):
             'intercept': model.intercept_,
             'slope': model.coef_[0],
             'r2': r2,
-            'X': X, # DataFrame for visualization compatibility
+            'X': X, 
             'y': y,
             'y_pred': y_pred
         }
@@ -124,14 +124,11 @@ def perform_forecasting(df, time_col, target_col, periods=5, freq_option=None):
         model = Holt(data_indexed[target_col], initialization_method="estimated").fit()
         forecast = model.forecast(periods)
         
-        # Prepare history with time_col column
         history = data_indexed[[target_col]].copy()
         history = history.reset_index()
         if time_col not in history.columns:
-            # Fallback if index name was lost
             history.rename(columns={'index': time_col}, inplace=True)
 
-        # Prepare forecast with time_col column
         forecast_df = pd.DataFrame({'Forecast': forecast})
         forecast_df = forecast_df.reset_index()
         if time_col not in forecast_df.columns:
@@ -185,10 +182,8 @@ def perform_backpropagation_forecasting(df, time_col, target_col, periods=5, fre
             forecast_values.append(pred)
             last_window = np.append(last_window[1:], pred)
             
-        history_df = data.copy() # Contains time_col and target_col
-        # Ensure target_col is there (it is)
+        history_df = data.copy() 
         
-        # Forecast DataFrame setup
         forecast_index = None
         if freq_option and hasattr(data[time_col], 'dt'):
              last_date = data[time_col].iloc[-1]
@@ -198,7 +193,6 @@ def perform_backpropagation_forecasting(df, time_col, target_col, periods=5, fre
             forecast_df = pd.DataFrame({'Forecast': forecast_values}, index=forecast_index)
             forecast_df = forecast_df.reset_index().rename(columns={'index': time_col})
         else:
-             # Create a numeric continuation
              start_idx = len(series)
              idx = range(start_idx, start_idx + periods)
              forecast_df = pd.DataFrame({'Forecast': forecast_values, time_col: idx})
@@ -225,7 +219,7 @@ def check_assumptions(residuals, X):
     """
     results = {}
 
-    # 1. Normality Test (Shapiro-Wilk Test)
+    # 1. Normality Test 
     try:
         shapiro_test = shapiro(residuals)
         results['normality'] = {
@@ -236,7 +230,7 @@ def check_assumptions(residuals, X):
         results['normality'] = None
         print(f"Normality Test Error: {e}")
 
-    # 2. Homoscedasticity Test (Breusch-Pagan Test)
+    # 2. Homoscedasticity Test 
     try:
         lm_test = het_breuschpagan(residuals, sm.add_constant(X))
         results['homoscedasticity'] = {
@@ -247,7 +241,7 @@ def check_assumptions(residuals, X):
         results['homoscedasticity'] = None
         print(f"Homoscedasticity Test Error: {e}")
 
-    # 3. Autocorrelation Test (Durbin-Watson Test)
+    # 3. Autocorrelation Test 
     try:
         dw_stat = durbin_watson(residuals)
         results['autocorrelation'] = {
@@ -258,7 +252,7 @@ def check_assumptions(residuals, X):
         results['autocorrelation'] = None
         print(f"Autocorrelation Test Error: {e}")
 
-    # 4. Multicollinearity Test (Variance Inflation Factor - VIF)
+    # 4. Multicollinearity Test 
     try:
         vif_data = pd.DataFrame()
         vif_data['Variable'] = X.columns

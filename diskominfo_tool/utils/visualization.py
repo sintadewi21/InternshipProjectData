@@ -185,3 +185,69 @@ def plot_clustering_2d(df, x_col, y_col, cluster_col):
     fig.update_layout(legend_title_text='Cluster')
 
     return fig
+
+def plot_elbow_curve(k_values, inertia_values):
+    """
+    Creates an elbow curve to visualize the optimal number of clusters.
+
+    Parameters:
+        k_values (list): List of k values (number of clusters).
+        inertia_values (list): List of inertia values corresponding to each k.
+
+    Returns:
+        plotly.graph_objects.Figure: A line plot representing the elbow curve.
+    """
+    if not k_values or not inertia_values or len(k_values) != len(inertia_values):
+        return None
+
+    fig = px.line(
+        x=k_values,
+        y=inertia_values,
+        markers=True,
+        title='Elbow Curve',
+        labels={'x': 'Number of Clusters (k)', 'y': 'Inertia'},
+        template='plotly_white'
+    )
+
+    fig.update_traces(line=dict(color='blue', width=2))
+    fig.update_layout(
+        xaxis=dict(tickmode='linear', dtick=1),
+        yaxis_title='Inertia',
+        xaxis_title='Number of Clusters (k)',
+        hovermode="x unified"
+    )
+
+    return fig
+
+def plot_silhouette_curve(k_values, silhouette_scores):
+    """
+    Creates a silhouette curve to visualize the quality of clustering.
+
+    Parameters:
+        k_values (list): List of k values (number of clusters).
+        silhouette_scores (list): List of silhouette scores corresponding to each k.
+
+    Returns:
+        plotly.graph_objects.Figure: A line plot representing the silhouette curve.
+    """
+    if not k_values or not silhouette_scores or len(k_values) != len(silhouette_scores):
+        return None
+
+    fig = px.line(
+        x=k_values,
+        y=silhouette_scores,
+        markers=True,
+        title='Silhouette Curve',
+        labels={'x': 'Number of Clusters (k)', 'y': 'Silhouette Score'},
+        template='plotly_white'
+    )
+
+    fig.update_traces(line=dict(color='green', width=2))
+    fig.update_layout(
+        xaxis=dict(tickmode='linear', dtick=1),
+        yaxis_title='Silhouette Score',
+        xaxis_title='Number of Clusters (k)',
+        hovermode="x unified"
+    )
+
+    return fig

@@ -7,17 +7,14 @@ from utils import loader, analysis, visualization, report, clustering
 import importlib
 importlib.reload(analysis)
 
-# --- KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="Diskominfo Data Tool",
     page_icon="📊",
     layout="wide"
 )
 
-# --- LOAD CUSTOM CSS ---
 import base64
 
-# --- LOAD CUSTOM CSS ---
 def local_css(file_name):
     with open(file_name, encoding='utf-8') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
@@ -45,11 +42,9 @@ def set_background(image_file):
 local_css("assets/custom_style.css")
 set_background("assets/logo_bg.jpg")
 
-# --- INISIALISASI SESSION STATE ---
 if 'df' not in st.session_state:
     st.session_state['df'] = None
 
-# --- SIDEBAR ---
 with st.sidebar:
     _, col_header, _ = st.columns([0.05, 0.9, 0.05])
     
@@ -106,7 +101,7 @@ if selected == "Overview":
     # Header
     col_h1, col_h2 = st.columns([2, 1])
     with col_h1:
-        st.markdown('<div class="main-header"> OVERVIEW DATA ANALYST TOOLS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="main-header"> OVERVIEW DATA</div>', unsafe_allow_html=True)
     with col_h2:
         st.markdown(""" """, unsafe_allow_html=True)
 
@@ -200,7 +195,6 @@ else:
             if not stats.empty:
                 st.dataframe(stats.style.format("{:.2f}"), use_container_width=True)
                 
-                # Custom Download Button (Excel)
                 buffer = io.BytesIO()
                 with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                     stats.to_excel(writer, index=True, sheet_name='Sheet1')
@@ -222,7 +216,6 @@ else:
                 freq = analysis.get_frequency_dist(df, sel_cat)
                 st.dataframe(freq, use_container_width=True)
                 
-                # Custom Download Button (Excel)
                 buffer = io.BytesIO()
                 with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                     freq.to_excel(writer, index=False, sheet_name='Sheet1')
@@ -306,7 +299,6 @@ else:
                         html_table = res.to_html(classes='blue-table', escape=False, index=False, float_format="{:.2f}".format)
                         st.markdown(html_table, unsafe_allow_html=True)
                         
-                        # Add Download Button for Grouped Data (Excel)
                         buffer = io.BytesIO()
                         with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                             res.to_excel(writer, index=False, sheet_name='Sheet1')
@@ -347,23 +339,18 @@ else:
                     if res:
                         st.success(f"Model: Y = {res['intercept']:.2f} + {res['slope']:.2f}X")
                         
-                        # Interpretasi R2
                         st.metric("R-Squared (Koefisien Determinasi)", f"{res['r2']:.4f}")
                         st.info(f"💡 *Interpretasi R-Squared:* Nilai *{res['r2']:.4f}* menunjukkan bahwa *{res['r2']*100:.2f}%* variasi dari **{y}** dapat dijelaskan oleh **{x}**. Sisanya sebesar *{100 - res['r2']*100:.2f}%* dijelaskan oleh faktor lain di luar model ini.")
 
-                        # Interpretasi Koefisien
                         st.markdown("### Interpretation of the Slope Coefficient")
                         direction = "naik" if res['slope'] > 0 else "turun"
                         st.write(f"- Setiap kenaikan 1 satuan **{x}**, maka **{y}** diperkirakan akan **{direction}** sebesar **{abs(res['slope']):.4f}** (dengan asumsi faktor lain tetap).")
 
-                        # Plot Regresi
                         st.plotly_chart(visualization.plot_regression(res['X'], res['y'], res['y_pred'], x, y), use_container_width=True)
                         
-                        # Plot Actual vs Predicted (Tambahan agar sama dengan multiple)
                         st.markdown("### Evaluation Model (Actual vs Predicted)")
                         st.plotly_chart(visualization.plot_actual_vs_predicted(res['y'], res['y_pred']), use_container_width=True)
 
-                        # --- Assumption Tests ---
                         with st.expander("🔍 Classic Assumption Tests (Uji Asumsi Klasik)", expanded=True):
                             residuals = res['y'] - res['y_pred']
                             assumptions = analysis.check_assumptions(residuals, res['X'])
@@ -438,8 +425,7 @@ else:
                             with st.expander("🔍 Classic Assumption Tests (Uji Asumsi Klasik)", expanded=True):
                                 residuals = res['y_actual'] - res['y_pred']
                                 
-                                # Re-construct X dataframe for checks
-                                X_df = df[xs].loc[res['y_actual'].index] # Ensure indices match
+                                X_df = df[xs].loc[res['y_actual'].index] 
                                 
                                 assumptions = analysis.check_assumptions(residuals, X_df)
                                 
@@ -492,14 +478,12 @@ else:
             time_col = c1.selectbox("Time Column:", all_cols)
             target = c2.selectbox("Target:", num_cols)
             
-            # Opsi Frekuensi Data untuk mengatasi error deteksi otomatis
             freq_option = st.selectbox("Frekuensi Data (Untuk Waktu):", [ "Harian (Daily)", "Bulanan (Monthly)", "Triwulan (Quarterly)", "Tahunan (Yearly)"])
             
             method = st.selectbox("Method:", ["Holt's Linear Trend (Data dengan Tren Linier)", "Backpropagation (Data Kompleks dan Nonlinier)"])
             steps = st.slider("Periods:", 1, 10, 5)
             
             if st.button("Forecast", use_container_width=True):
-                # Mapping frekuensi ke kode Pandas
                 freq_map = {
                     "Harian (Daily)": "D",
                     "Bulanan (Monthly)": "M",
@@ -518,7 +502,6 @@ else:
                     st.plotly_chart(visualization.plot_forecast(res['history'], res['forecast'], time_col, target), use_container_width=True)
                     st.dataframe(res['forecast'])
 
-                    # Custom Download Button for Forecast (Excel)
                     buffer = io.BytesIO()
                     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                         res['forecast'].to_excel(writer, index=False, sheet_name='Sheet1')
@@ -568,11 +551,9 @@ else:
                         if res_df is not None:
                             st.success(f"Clustering completed with K={k_value}!")
                             
-                            # Result Table
                             st.write("### Clustering Results")
                             st.dataframe(res_df, use_container_width=True)
                             
-                            # Visualization
                             st.write("### Cluster Visualization (2D)")
                             col_x, col_y = st.columns(2)
                             x_axis = col_x.selectbox("X Axis:", features, index=0)
@@ -580,7 +561,6 @@ else:
                             
                             st.plotly_chart(visualization.plot_clustering_2d(res_df, x_axis, y_axis, 'Cluster'), use_container_width=True)
                             
-                            # Download
                             buffer = io.BytesIO()
                             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                                 res_df.to_excel(writer, index=False, sheet_name='Clustering_Result')
@@ -601,14 +581,12 @@ else:
         elif selected == "Contact Info":
             st.markdown('<div class="main-header">CONTACT INFO & FAQ</div>', unsafe_allow_html=True)
             
-            # Kalimat pengantar Bahasa Inggris
             st.markdown("""
                 <p style="color: #64748B; font-size: 16px; margin-bottom: 30px;">
                     If you have any questions or concerns, feel free to contact one of the following developers.
                 </p>
             """, unsafe_allow_html=True)
             
-            # Membuat layout 50% - 50% untuk dua developer
             col_dev1, col_dev2 = st.columns([1, 1])
             
             subject = "Diskominfo Data Tool Inquiry"

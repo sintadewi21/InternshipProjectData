@@ -23,7 +23,8 @@ def local_css(file_name):
 
 def set_background(image_file):
     try:
-        with open(image_file, "rb") as f:
+        file_path = os.path.join(os.path.dirname(__file__), image_file)
+        with open(file_path, "rb") as f:
             img_data = f.read()
         b64_encoded = base64.b64encode(img_data).decode()
         style = f"""
@@ -39,7 +40,7 @@ def set_background(image_file):
         """
         st.markdown(style, unsafe_allow_html=True)
     except FileNotFoundError:
-        pass 
+        st.error("Background image not found. Please check the file path.")
 
 local_css("assets/custom_style.css")
 set_background("assets/logo_bg.jpg")
@@ -55,13 +56,13 @@ with st.sidebar:
         
         with c1:
             try:
-                st.image("logo_lamongan.png", use_container_width=True)
+                st.image(os.path.join(os.path.dirname(__file__), "assets/logo_lamongan.png"), use_container_width=True)
             except:
                 st.write("🏛️")
         
         with c2:
             try:
-                st.image("logo.png", use_container_width=True)
+                st.image(os.path.join(os.path.dirname(__file__), "assets/logo.png"), use_container_width=True)
             except:
                 st.write("🌐")
         

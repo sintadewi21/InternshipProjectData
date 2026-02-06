@@ -597,7 +597,7 @@ else:
             subject = "Diskominfo Data Tool Inquiry"
             
             with col_dev1:
-                mail_sinta = f"mailto:sinta@example.com?subject={subject.replace(' ', '%20')}"
+                mail_sinta = f"mailto:sint.adr21@gmail.com?subject={subject.replace(' ', '%20')}"
                 st.markdown(f"""
                 <div class="contact-card">
                     <div style="font-size: 50px; text-align: center;">👩‍💻</div>
@@ -607,7 +607,7 @@ else:
                 """, unsafe_allow_html=True)
 
             with col_dev2:
-                mail_zaki = f"mailto:zaki@example.com?subject={subject.replace(' ', '%20')}"
+                mail_zaki = f"mailto:azaidanad69@gmail.com?subject={subject.replace(' ', '%20')}"
                 st.markdown(f"""
                 <div class="contact-card">
                     <div style="font-size: 50px; text-align: center;">👨‍💻</div>

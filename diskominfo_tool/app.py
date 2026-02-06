@@ -6,6 +6,7 @@ import io
 from utils import loader, analysis, visualization, report, clustering
 import importlib
 importlib.reload(analysis)
+import os
 
 st.set_page_config(
     page_title="Diskominfo Data Tool",
@@ -16,7 +17,8 @@ st.set_page_config(
 import base64
 
 def local_css(file_name):
-    with open(file_name, encoding='utf-8') as f:
+    file_path = os.path.join(os.path.dirname(__file__), file_name)
+    with open(file_path, encoding='utf-8') as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 def set_background(image_file):
@@ -561,6 +563,8 @@ else:
                             
                             st.plotly_chart(visualization.plot_clustering_2d(res_df, x_axis, y_axis, 'Cluster'), use_container_width=True)
                             
+
+                            # Download Link
                             buffer = io.BytesIO()
                             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                                 res_df.to_excel(writer, index=False, sheet_name='Clustering_Result')
